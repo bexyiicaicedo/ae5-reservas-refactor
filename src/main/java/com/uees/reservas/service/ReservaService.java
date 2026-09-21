@@ -2,25 +2,32 @@ package com.uees.reservas.service;
 
 import com.uees.reservas.domain.Reserva;
 import com.uees.reservas.domain.Usuario;
+import com.uees.reservas.notificacion.NotificadorReserva;
+import com.uees.reservas.repository.ReservaRepository;
 
-import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Clase heredada (legacy).
+ * Orquesta la confirmación de una reserva.
  *
- * Problemas de diseño detectados (ver reporte técnico):
- *  1. Mezcla responsabilidades: validación de correo, persistencia en memoria
- *     y notificación (impresión de correo) conviven en la misma clase.
- *  2. confirmar() usa un condicional anidado de 4 niveles (árbol de flechas).
- *  3. El correo se maneja como String primitivo (primitive obsession) y su
- *     validación se invoca desde dos sitios distintos sin una única fuente
- *     de verdad sobre qué es un correo válido.
+ * REFACTORIZACIÓN 1 (Extract Class / Move Method) aplicada:
+ * la persistencia se movió a ReservaRepository y la notificación a
+ * NotificadorReserva. ReservaService ya no sabe CÓMO se guarda ni CÓMO se
+ * notifica; solo decide CUÁNDO debe ocurrir cada cosa.
+ *
+ * La API pública (validar, confirmar, guardar, enviarCorreo, getReservas,
+ * getCorreosEnviados) se mantiene idéntica para que la suite de pruebas de
+ * la Actividad 2 siga protegiendo el comportamiento sin modificaciones.
  */
 public class ReservaService {
 
-    private final List<Reserva> reservas = new ArrayList<>();
-    private final List<String> correosEnviados = new ArrayList<>();
+    private final ReservaRepository repositorio;
+    private final NotificadorReserva notificador;
+
+    public ReservaService() {
+        this.repositorio = new ReservaRepository();
+        this.notificador = new NotificadorReserva(this::validar);
+    }
 
     public boolean validar(String correo) {
         if (correo == null) {
@@ -52,23 +59,18 @@ public class ReservaService {
     }
 
     public void guardar(Reserva reserva) {
-        reservas.add(reserva);
+        repositorio.guardar(reserva);
     }
 
     public String enviarCorreo(Usuario usuario, Reserva reserva) {
-        if (!validar(usuario.getCorreo())) {
-            throw new IllegalArgumentException("Correo inválido: " + usuario.getCorreo());
-        }
-        String mensaje = "Reserva " + reserva.getId() + " confirmada para " + usuario.getNombre();
-        correosEnviados.add(usuario.getCorreo() + " -> " + mensaje);
-        return mensaje;
+        return notificador.notificar(usuario, reserva);
     }
 
     public List<Reserva> getReservas() {
-        return reservas;
+        return repositorio.obtenerTodas();
     }
 
     public List<String> getCorreosEnviados() {
-        return correosEnviados;
+        return notificador.obtenerEnviados();
     }
 }
