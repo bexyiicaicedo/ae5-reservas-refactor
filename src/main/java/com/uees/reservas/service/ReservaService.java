@@ -27,6 +27,8 @@ import java.util.List;
  */
 public class ReservaService {
 
+    private static final int HORAS_MINIMAS_ANTICIPACION = 2;
+
     private final ReservaRepository repositorio;
     private final NotificadorReserva notificador;
 
@@ -39,18 +41,32 @@ public class ReservaService {
         return Correo.esValido(correo);
     }
 
+    /**
+     * REFACTORIZACIÓN 3 (Guard Clauses / Decompose Conditional): el
+     * condicional anidado de 4 niveles se reemplazó por salidas
+     * anticipadas. Cada guard clause nombra explícitamente la razón por
+     * la que NO se confirma, en vez de forzar al lector a acumular cuatro
+     * condiciones en la cabeza para entender el único camino feliz.
+     * El resultado final —qué combinaciones confirman la reserva— es
+     * idéntico al original; solo cambió cómo se expresa.
+     */
     public void confirmar(Usuario usuario, Reserva reserva, int horasAnticipacion) {
-        if (usuario != null) {
-            if (usuario.isActivo()) {
-                if (!reserva.isCancelada()) {
-                    if (horasAnticipacion >= 2) {
-                        reserva.confirmar();
-                        guardar(reserva);
-                        enviarCorreo(usuario, reserva);
-                    }
-                }
-            }
+        if (usuario == null) {
+            return;
         }
+        if (!usuario.isActivo()) {
+            return;
+        }
+        if (reserva.isCancelada()) {
+            return;
+        }
+        if (horasAnticipacion < HORAS_MINIMAS_ANTICIPACION) {
+            return;
+        }
+
+        reserva.confirmar();
+        guardar(reserva);
+        enviarCorreo(usuario, reserva);
     }
 
     public void guardar(Reserva reserva) {
