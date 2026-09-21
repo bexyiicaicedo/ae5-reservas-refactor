@@ -1,0 +1,116 @@
+commit 736b9c6ec21b865edccbff10f28252091fcbbee8
+Author: Ruth Betsabe Caicedo Quintero <ruth.caicedo@uees.edu.ec>
+Date:   Mon Sep 21 18:29:33 2026 +0000
+
+    refactor: simplificar confirmar() con guard clauses (Decompose Conditional)
+    
+    Tecnica: Guard Clauses / Decompose Conditional.
+    
+    Problema: confirmar() tenia un condicional anidado de 4 niveles (arbol de
+    flechas). El camino feliz (confirmar, guardar, notificar) quedaba
+    escondido dentro de 4 llaves de cierre; entender que combinacion de
+    condiciones lo alcanzaba exigia leer las 4 condiciones como una sola
+    expresion compuesta.
+    
+    Cambio: cada condicion se invirtio en una guard clause con return
+    temprano, nombrando explicitamente por que NO se confirma la reserva.
+    El camino feliz quedo al final, sin anidamiento, al mismo nivel de
+    indentacion. El conjunto de combinaciones que confirma la reserva no
+    cambio.
+    
+    Prueba que protege: las 4 pruebas de ConfirmarReserva en
+    ReservaServiceTest (usuarioNuloNoConfirma, usuarioInactivoNoConfirma,
+    reservaCanceladaNoConfirma, anticipacionInsuficienteNoConfirma) mas
+    casoFelizConfirmaGuardaYNotifica, que cubren cada guard clause y el
+    camino feliz.
+    
+    mvn test -> BUILD SUCCESS, Tests run: 19, Failures: 0, Errors: 0
+
+ .../com/uees/reservas/service/ReservaService.java  | 36 ++++++++++++++++------
+ 1 file changed, 26 insertions(+), 10 deletions(-)
+
+commit 51f66d6782ae10e765677e66d4e939cd8522c309
+Author: Ruth Betsabe Caicedo Quintero <ruth.caicedo@uees.edu.ec>
+Date:   Mon Sep 21 18:29:01 2026 +0000
+
+    refactor: introducir Value Object Correo para reemplazar validacion ad-hoc de String
+    
+    Tecnica: Value Object.
+    
+    Problema: el correo se manejaba como String primitivo (primitive
+    obsession); la regla 'que es un correo valido' estaba conceptualmente
+    duplicada entre ReservaService.validar() y el predicado inyectado a
+    NotificadorReserva, sin una unica fuente de verdad ni forma de garantizar
+    el invariante en tiempo de compilacion.
+    
+    Cambio: se introdujo el record Correo(String valor) con el invariante
+    verificado en el constructor compacto. ReservaService.validar() ahora
+    delega en Correo.esValido(). NotificadorReserva construye el Correo en
+    el mismo punto donde antes lanzaba la excepcion.
+    
+    Riesgo detectado por la propia red de pruebas (evidencia real, no
+    hipotetica): un primer intento de este refactor validaba el correo de
+    forma eager en el constructor de Usuario. Eso adelantaba el momento en
+    que se lanza la excepcion y rompio correoInvalidoLanzaExcepcion
+    (mvn test -> BUILD FAILURE, Tests run: 12, Errors: 1). Se revirtio antes
+    de commitear y se corrigio construyendo el Correo en el punto de uso
+    (NotificadorReserva), preservando el comportamiento exacto.
+    
+    Prueba que protege: las 7 pruebas nuevas de CorreoTest (contrato del
+    invariante) + correoInvalidoLanzaExcepcion y casoFelizConfirmaGuardaYNotifica
+    de ReservaServiceTest (comportamiento observable sin cambios).
+    
+    mvn test -> BUILD SUCCESS, Tests run: 19, Failures: 0, Errors: 0
+
+ src/main/java/com/uees/reservas/domain/Correo.java | 26 +++++++++++
+ .../reservas/notificacion/NotificadorReserva.java  | 33 +++++++-------
+ .../com/uees/reservas/service/ReservaService.java  | 29 +++++-------
+ .../java/com/uees/reservas/domain/CorreoTest.java  | 51 ++++++++++++++++++++++
+ 4 files changed, 105 insertions(+), 34 deletions(-)
+
+commit f055377ec32d5fb88dc69cdf73823dbb74588829
+Author: Ruth Betsabe Caicedo Quintero <ruth.caicedo@uees.edu.ec>
+Date:   Mon Sep 21 18:22:43 2026 +0000
+
+    refactor: extraer ReservaRepository y NotificadorReserva desde ReservaService
+    
+    Tecnica: Extract Class + Move Method.
+    
+    Problema: ReservaService mezclaba tres responsabilidades (validar,
+    persistir, notificar), lo que le daba varias razones distintas para
+    cambiar y dificultaba probar cada una por separado.
+    
+    Cambio: se crearon ReservaRepository (persistencia) y NotificadorReserva
+    (notificacion). ReservaService ahora orquesta, delegando 'como se guarda'
+    y 'como se notifica' a sus colaboradores. La API publica no cambio.
+    
+    Prueba que protege: las 12 pruebas de ReservaServiceTest (en particular
+    casoFelizConfirmaGuardaYNotifica y correoInvalidoLanzaExcepcion), que
+    siguen en verde sin modificacion alguna.
+    
+    mvn test -> BUILD SUCCESS, Tests run: 12, Failures: 0, Errors: 0
+
+ .../reservas/notificacion/NotificadorReserva.java  | 42 ++++++++++++++++++++++
+ .../reservas/repository/ReservaRepository.java     | 25 +++++++++++++
+ .../com/uees/reservas/service/ReservaService.java  | 42 +++++++++++-----------
+ 3 files changed, 89 insertions(+), 20 deletions(-)
+
+commit c93e9c1fb1a771bc9d3e9d8488d8fc5a176efe92
+Author: Ruth Betsabe Caicedo Quintero <ruth.caicedo@uees.edu.ec>
+Date:   Mon Sep 21 18:21:39 2026 +0000
+
+    chore: base heredada con red de pruebas (Actividad 2) en verde
+    
+    - ReservaService mezcla validacion, persistencia y notificacion (God Class).
+    - confirmar() usa condicional anidado de 4 niveles.
+    - correo se maneja como String primitivo, validado ad-hoc.
+    - 12 pruebas JUnit 5 caracterizan el comportamiento actual: sirven como
+      red de seguridad para las refactorizaciones de la Actividad 5.
+
+ .gitignore                                         |   9 ++
+ pom.xml                                            |  44 +++++++
+ .../java/com/uees/reservas/domain/Reserva.java     |  34 +++++
+ .../java/com/uees/reservas/domain/Usuario.java     |  26 ++++
+ .../com/uees/reservas/service/ReservaService.java  |  74 +++++++++++
+ .../uees/reservas/service/ReservaServiceTest.java  | 141 +++++++++++++++++++++
+ 6 files changed, 328 insertions(+)

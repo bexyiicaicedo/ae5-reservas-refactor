@@ -1,0 +1,4 @@
+736b9c6 refactor: simplificar confirmar() con guard clauses (Decompose Conditional)
+51f66d6 refactor: introducir Value Object Correo para reemplazar validacion ad-hoc de String
+f055377 refactor: extraer ReservaRepository y NotificadorReserva desde ReservaService
+c93e9c1 chore: base heredada con red de pruebas (Actividad 2) en verde

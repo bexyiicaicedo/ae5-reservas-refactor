@@ -1,0 +1,41 @@
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] ---------------------< com.uees:reservas-refactor >---------------------
+[INFO] Building reservas-refactor 1.0.0
+[INFO] --------------------------------[ jar ]---------------------------------
+[WARNING] The artifact org.apache.maven.plugins:maven-resources-plugin:jar:2.6 has been relocated to org.apache.maven.plugins:maven-resources-plugin:jar:3.3.0
+[INFO] 
+[INFO] --- maven-resources-plugin:3.3.0:resources (default-resources) @ reservas-refactor ---
+[INFO] skip non existing resourceDirectory /home/claude/verify/src/main/resources
+[INFO] 
+[INFO] --- maven-compiler-plugin:3.10.1:compile (default-compile) @ reservas-refactor ---
+[INFO] Changes detected - recompiling the module!
+[INFO] Compiling 6 source files to /home/claude/verify/target/classes
+[INFO] 
+[INFO] --- maven-resources-plugin:3.3.0:testResources (default-testResources) @ reservas-refactor ---
+[INFO] skip non existing resourceDirectory /home/claude/verify/src/test/resources
+[INFO] 
+[INFO] --- maven-compiler-plugin:3.10.1:testCompile (default-testCompile) @ reservas-refactor ---
+[INFO] Changes detected - recompiling the module!
+[INFO] Compiling 2 source files to /home/claude/verify/target/test-classes
+[INFO] 
+[INFO] --- maven-surefire-plugin:2.22.3:test (default-test) @ reservas-refactor ---
+[INFO] 
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running com.uees.reservas.service.ReservaServiceTest
+[INFO] Tests run: 12, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.159 s - in com.uees.reservas.service.ReservaServiceTest
+[INFO] Running com.uees.reservas.domain.CorreoTest
+[INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.005 s - in com.uees.reservas.domain.CorreoTest
+[INFO] 
+[INFO] Results:
+[INFO] 
+[INFO] Tests run: 19, Failures: 0, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  12.553 s
+[INFO] Finished at: 2026-09-21T18:30:45Z
+[INFO] ------------------------------------------------------------------------

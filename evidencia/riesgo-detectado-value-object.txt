@@ -1,0 +1,50 @@
+Evidencia real de un riesgo detectado por la red de pruebas
+=============================================================
+
+Contexto: durante la Refactorización 2 (Value Object Correo), el primer
+intento fue validar el correo de forma "eager" (inmediata) dentro del
+constructor de Usuario:
+
+    public Usuario(String nombre, String correo, boolean activo) {
+        this.nombre = nombre;
+        this.correo = new Correo(correo); // validación inmediata (eager)
+        this.activo = activo;
+    }
+
+Al ejecutar `mvn test` con ese cambio, la suite detectó una regresión de
+comportamiento: la excepción ya no se lanzaba dentro del bloque que
+`assertThrows` esperaba capturar, sino antes, al construir el `Usuario`.
+
+Salida real de `mvn test` (capturada antes de revertir el cambio):
+
+-------------------------------------------------------------------------
+[INFO] Running com.uees.reservas.service.ReservaServiceTest
+[ERROR] Tests run: 12, Failures: 0, Errors: 1, Skipped: 0, Time elapsed:
+0.191 s <<< FAILURE! - in com.uees.reservas.service.ReservaServiceTest
+[ERROR] correoInvalidoLanzaExcepcion  Time elapsed: 0.02 s  <<< ERROR!
+java.lang.IllegalArgumentException: Correo inválido: correo-sin-formato
+	at com.uees.reservas.service.ReservaServiceTest$EnviarCorreo
+        .correoInvalidoLanzaExcepcion(ReservaServiceTest.java:125)
+
+[INFO] Results:
+[ERROR] Errors:
+[ERROR]   ReservaServiceTest$EnviarCorreo.correoInvalidoLanzaExcepcion:125
+        » IllegalArgument
+[ERROR] Tests run: 12, Failures: 0, Errors: 1, Skipped: 0
+
+[INFO] BUILD FAILURE
+-------------------------------------------------------------------------
+
+Decisión tomada: siguiendo la regla obligatoria de la actividad
+("si una prueba falla, detente y revisa el último cambio"), el cambio NO
+se llevó a commit. Se revirtió el constructor de Usuario a su forma
+original (String correo, sin validar) y el Value Object Correo se
+construyó en el punto de uso real (dentro de NotificadorReserva), que es
+donde el código original lanzaba la excepción. Con esa corrección,
+`mvn test` volvió a estar en verde (19/19) y sí se llevó a commit.
+
+Esto responde directamente a la pregunta central de la Actividad 5:
+la red de pruebas no solo "no falló" — falló exactamente cuando debía,
+en el lugar correcto, y esa falla fue la señal que evitó introducir una
+regresión sutil (un cambio en el momento en que el sistema reporta un
+error) que fácilmente hubiera pasado una revisión visual del código.
